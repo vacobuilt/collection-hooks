@@ -1,6 +1,9 @@
 {
   "name": "@highspring/collection-hooks",
   "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "React hooks for MongoDB collections with field standardization and caching",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,6 +36,6 @@
     "collections",
     "nextjs"
   ],
-  "author": "HighSpring Labs",
+  "author": "Highspring Labs",
   "license": "MIT"
 }
