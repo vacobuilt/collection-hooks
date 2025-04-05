@@ -1,13 +1,13 @@
-# @highspring/collection-hooks
+# @highspringlabs/collection-hooks
 
 React hooks for MongoDB collections with field standardization and caching.
 
 ## Installation
 
 ```bash
-npm install @highspring/collection-hooks
+npm install @highspringlabs/collection-hooks
 # or
-yarn add @highspring/collection-hooks
+yarn add @highspringlabs/collection-hooks
 ```
 
 ## Features
@@ -21,10 +21,55 @@ yarn add @highspring/collection-hooks
 
 ## Usage
 
+### Configuration
+
+Before using the hooks, you need to configure the MongoDB connection:
+
+```typescript
+// In your app initialization (e.g., _app.tsx for Next.js)
+import { configureCollectionHooks } from '@highspringlabs/collection-hooks';
+
+// Simple configuration with MongoDB URI
+configureCollectionHooks({
+  mongodbUri: 'mongodb://localhost:27017',
+  dbName: 'mydatabase',
+});
+
+// Or with advanced options
+configureCollectionHooks({
+  mongodbUri: 'mongodb://username:password@localhost:27017',
+  dbName: 'mydatabase',
+  options: {
+    // MongoDB client options
+    connectTimeoutMS: 5000,
+  },
+});
+
+// Or with an existing database connection
+import { Db, MongoClient } from 'mongodb';
+
+const client = new MongoClient('mongodb://localhost:27017');
+await client.connect();
+const db = client.db('mydatabase');
+
+configureCollectionHooks({
+  database: db,
+});
+
+// Or with a function that returns a database connection
+configureCollectionHooks({
+  getDatabaseFn: async () => {
+    const client = new MongoClient('mongodb://localhost:27017');
+    await client.connect();
+    return client.db('mydatabase');
+  },
+});
+```
+
 ### Basic Usage
 
 ```tsx
-import { useCollection } from '@highspring/collection-hooks';
+import { useCollection } from '@highspringlabs/collection-hooks';
 
 function MyComponent() {
   const { data, loading, error, refresh } = useCollection<User>('/api/users');
@@ -48,7 +93,7 @@ function MyComponent() {
 ### With Initial Data (SSR)
 
 ```tsx
-import { useCollection } from '@highspring/collection-hooks';
+import { useCollection } from '@highspringlabs/collection-hooks';
 
 export async function getServerSideProps() {
   const res = await fetch('http://api.example.com/users');
@@ -70,7 +115,7 @@ function MyComponent({ initialUsers }) {
 
 ```typescript
 // pages/api/users.ts
-import { createCollectionApi } from '@highspring/collection-hooks/server';
+import { createCollectionApi } from '@highspringlabs/collection-hooks';
 import { UserSchema } from '@/schemas';
 
 const { getAll, getById, create, update, remove } = createCollectionApi(
@@ -145,6 +190,55 @@ Factory function for creating collection API endpoints.
   loading: boolean;
   mutate: (body: any) => Promise<T | null>;
 }
+```
+
+### Closing the Connection
+
+When your application shuts down, you can close the MongoDB connection:
+
+```typescript
+import { closeConnection } from '@highspringlabs/collection-hooks';
+
+// In your app's cleanup code
+await closeConnection();
+```
+
+## Migration from 0.x to 1.0
+
+Version 1.0 introduces a simplified configuration system that makes it easier to use collection-hooks with MongoDB. Here's how to migrate:
+
+### Before (0.x)
+
+```typescript
+// Custom database implementation
+import { MongoClient } from 'mongodb';
+
+// Manual connection setup
+const client = new MongoClient('mongodb://localhost:27017');
+await client.connect();
+const db = client.db('mydatabase');
+
+// Custom override of the database module
+jest.mock('@highspringlabs/collection-hooks/server/database', () => ({
+  getDatabase: async () => db
+}));
+```
+
+### After (1.0)
+
+```typescript
+import { configureCollectionHooks } from '@highspringlabs/collection-hooks';
+
+// Simple configuration
+configureCollectionHooks({
+  mongodbUri: 'mongodb://localhost:27017',
+  dbName: 'mydatabase'
+});
+
+// Or use an existing connection
+configureCollectionHooks({
+  database: existingDbConnection
+});
 ```
 
 ## License

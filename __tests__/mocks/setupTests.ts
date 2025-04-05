@@ -1,3 +1,11 @@
+// Polyfill for TextEncoder/TextDecoder
+if (typeof TextEncoder === 'undefined') {
+  global.TextEncoder = require('util').TextEncoder;
+}
+if (typeof TextDecoder === 'undefined') {
+  global.TextDecoder = require('util').TextDecoder;
+}
+
 // Create a mock fetch function
 const mockFetch = jest.fn();
 

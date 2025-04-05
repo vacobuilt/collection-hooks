@@ -1,7 +1,9 @@
 import { z } from 'zod';
+import { ObjectId } from 'mongodb';
 import { ApiOptions } from '../types';
 import { getEntityType, standardizeFields } from '../utils/standardization';
 import cache from './cache';
+import { getCollection } from './database';
 
 /**
  * Create a collection API endpoint factory
@@ -45,9 +47,7 @@ export function createCollectionApi<T extends { id: string }>(
     }
 
     try {
-      // This part would typically use a database connection
-      // For this package, we'll assume the user will provide their own implementation
-      // through the hooks option
+      // Prepare query
       let query = {};
       
       // Apply beforeRead hook if provided
@@ -55,14 +55,9 @@ export function createCollectionApi<T extends { id: string }>(
         query = hooks.beforeRead(query);
       }
       
-      // This is where you would fetch data from MongoDB
-      // For now, we'll just return a placeholder
-      let items: any[] = [];
-      
-      // In a real implementation, you would do something like:
-      // const db = await getDatabase();
-      // const collection = db.collection(collectionName);
-      // const items = await collection.find(query).toArray();
+      // Fetch data from MongoDB
+      const collection = await getCollection(collectionName);
+      const items = await collection.find(query).toArray();
       
       // Convert MongoDB documents to plain objects and standardize fields
       const data = items.map((item: any) => {
@@ -122,14 +117,9 @@ export function createCollectionApi<T extends { id: string }>(
     }
 
     try {
-      // This is where you would fetch data from MongoDB
-      // For now, we'll just return a placeholder
-      let item: any = null;
-      
-      // In a real implementation, you would do something like:
-      // const db = await getDatabase();
-      // const collection = db.collection(collectionName);
-      // const item = await collection.findOne({ id });
+      // Fetch data from MongoDB
+      const collection = await getCollection(collectionName);
+      const item = await collection.findOne({ id });
       
       if (!item) {
         return new Response(
@@ -201,14 +191,9 @@ export function createCollectionApi<T extends { id: string }>(
         validatedData = processedBody as T;
       }
       
-      // This is where you would insert data into MongoDB
-      // For now, we'll just return a placeholder
-      let result: any = { insertedId: 'placeholder-id' };
-      
-      // In a real implementation, you would do something like:
-      // const db = await getDatabase();
-      // const collection = db.collection(collectionName);
-      // const result = await collection.insertOne(validatedData);
+      // Insert data into MongoDB
+      const collection = await getCollection(collectionName);
+      const result = await collection.insertOne(validatedData);
       
       // Apply afterWrite hook if provided
       const processedResult = hooks.afterWrite 
@@ -264,14 +249,9 @@ export function createCollectionApi<T extends { id: string }>(
         validatedData = { ...processedBody, id } as T;
       }
       
-      // This is where you would update data in MongoDB
-      // For now, we'll just return a placeholder
-      let result: any = { matchedCount: 1 };
-      
-      // In a real implementation, you would do something like:
-      // const db = await getDatabase();
-      // const collection = db.collection(collectionName);
-      // const result = await collection.updateOne({ id }, { $set: validatedData });
+      // Update data in MongoDB
+      const collection = await getCollection(collectionName);
+      const result = await collection.updateOne({ id }, { $set: validatedData });
       
       if (result.matchedCount === 0) {
         return new Response(
@@ -318,14 +298,9 @@ export function createCollectionApi<T extends { id: string }>(
     const { id } = context.params;
     
     try {
-      // This is where you would delete data from MongoDB
-      // For now, we'll just return a placeholder
-      let result: any = { deletedCount: 1 };
-      
-      // In a real implementation, you would do something like:
-      // const db = await getDatabase();
-      // const collection = db.collection(collectionName);
-      // const result = await collection.deleteOne({ id });
+      // Delete data from MongoDB
+      const collection = await getCollection(collectionName);
+      const result = await collection.deleteOne({ id });
       
       if (result.deletedCount === 0) {
         return new Response(
@@ -370,15 +345,9 @@ export function createCollectionApi<T extends { id: string }>(
       // Delete the cache entry
       cache.delete(cacheKey);
       
-      // Fetch fresh data
-      // This is where you would fetch data from MongoDB
-      // For now, we'll just return a placeholder
-      let items: any[] = [];
-      
-      // In a real implementation, you would do something like:
-      // const db = await getDatabase();
-      // const collection = db.collection(collectionName);
-      // const items = await collection.find({}).toArray();
+      // Fetch fresh data from MongoDB
+      const collection = await getCollection(collectionName);
+      const items = await collection.find({}).toArray();
       
       // Convert MongoDB documents to plain objects and standardize fields
       const data = items.map((item: any) => {

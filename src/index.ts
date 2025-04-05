@@ -1,3 +1,6 @@
+// Export configuration
+export { configureCollectionHooks, closeConnection } from './config';
+
 // Export hooks
 export { useCollection } from './hooks/useCollection';
 import { useCollection } from './hooks/useCollection';
