@@ -13,6 +13,5 @@
     "moduleResolution": "node",
     "downlevelIteration": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
+  "include": ["src", "__tests__"]
 }

@@ -10,7 +10,7 @@ import { CollectionQueryResult } from '../types';
 export function useCollectionQuery<T = any>(url: string | null): CollectionQueryResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(!!url);
 
   const fetchData = async () => {
     if (!url) {

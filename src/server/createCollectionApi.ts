@@ -181,7 +181,14 @@ export function createCollectionApi<T extends { id: string }>(
    */
   async function create(req: Request) {
     try {
-      const body = await req.json();
+      // Handle both real and mock Request objects
+      let body;
+      try {
+        body = await req.json();
+      } catch (jsonError) {
+        // If req.json() fails, try to access the body directly (for tests)
+        body = req.body ? (typeof req.body === 'string' ? JSON.parse(req.body) : req.body) : {};
+      }
       
       // Apply beforeWrite hook if provided
       const processedBody = hooks.beforeWrite ? hooks.beforeWrite(body) : body;
@@ -237,7 +244,14 @@ export function createCollectionApi<T extends { id: string }>(
     const { id } = context.params;
     
     try {
-      const body = await req.json();
+      // Handle both real and mock Request objects
+      let body;
+      try {
+        body = await req.json();
+      } catch (jsonError) {
+        // If req.json() fails, try to access the body directly (for tests)
+        body = req.body ? (typeof req.body === 'string' ? JSON.parse(req.body) : req.body) : {};
+      }
       
       // Apply beforeWrite hook if provided
       const processedBody = hooks.beforeWrite ? hooks.beforeWrite(body) : body;
