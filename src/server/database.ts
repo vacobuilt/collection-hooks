@@ -3,7 +3,7 @@
  */
 
 import { Collection, Db } from 'mongodb';
-import { getDatabase as getConfiguredDatabase } from '../config';
+import { getDatabase as getConfiguredDatabase } from './config';
 
 /**
  * Get the database connection

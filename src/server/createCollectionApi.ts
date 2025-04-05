@@ -1,15 +1,14 @@
 import { z } from 'zod';
 import { ObjectId } from 'mongodb';
-import { ApiOptions } from '../types';
-import { getEntityType, standardizeFields } from '../utils/standardization';
+import { ApiOptions } from '../shared/types';
 import cache from './cache';
 import { getCollection } from './database';
 
 /**
  * Create a collection API endpoint factory
  * 
- * This function creates API endpoints for a MongoDB collection with standardized
- * field names and caching.
+ * This function creates API endpoints for a MongoDB collection with caching
+ * and validation.
  * 
  * @param collectionName The name of the MongoDB collection
  * @param schema The Zod schema for validating documents
@@ -23,9 +22,7 @@ export function createCollectionApi<T extends { id: string }>(
 ) {
   const {
     cacheTime = 60 * 60 * 1000, // 1 hour default cache time
-    standardizeFields: shouldStandardizeFields = true,
     validateOnWrite = true,
-    fieldMappings = {},
     hooks = {},
   } = options;
 
@@ -59,14 +56,9 @@ export function createCollectionApi<T extends { id: string }>(
       const collection = await getCollection(collectionName);
       const items = await collection.find(query).toArray();
       
-      // Convert MongoDB documents to plain objects and standardize fields
+      // Convert MongoDB documents to plain objects
       const data = items.map((item: any) => {
-        const plainItem = { ...item, _id: item._id?.toString() };
-        
-        // Apply field standardization if enabled
-        return shouldStandardizeFields
-          ? standardizeFields(plainItem, getEntityType(collectionName), fieldMappings)
-          : plainItem;
+        return { ...item, _id: item._id?.toString() };
       });
       
       // Apply afterRead hook if provided
@@ -131,11 +123,8 @@ export function createCollectionApi<T extends { id: string }>(
         );
       }
       
-      // Convert MongoDB document to plain object and standardize fields
-      const plainItem = { ...item, _id: item._id?.toString() };
-      const data = shouldStandardizeFields
-        ? standardizeFields(plainItem, getEntityType(collectionName), fieldMappings)
-        : plainItem;
+      // Convert MongoDB document to plain object
+      const data = { ...item, _id: item._id?.toString() };
       
       // Apply afterRead hook if provided
       const processedData = hooks.afterRead ? hooks.afterRead(data) : data;
@@ -349,14 +338,9 @@ export function createCollectionApi<T extends { id: string }>(
       const collection = await getCollection(collectionName);
       const items = await collection.find({}).toArray();
       
-      // Convert MongoDB documents to plain objects and standardize fields
+      // Convert MongoDB documents to plain objects
       const data = items.map((item: any) => {
-        const plainItem = { ...item, _id: item._id?.toString() };
-        
-        // Apply field standardization if enabled
-        return shouldStandardizeFields
-          ? standardizeFields(plainItem, getEntityType(collectionName), fieldMappings)
-          : plainItem;
+        return { ...item, _id: item._id?.toString() };
       });
       
       // Apply afterRead hook if provided

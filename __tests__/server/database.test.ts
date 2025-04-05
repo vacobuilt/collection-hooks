@@ -1,6 +1,6 @@
 import { Collection, Db } from 'mongodb';
 import { getDatabase, getCollection } from '../../src/server/database';
-import * as configModule from '../../src/config';
+import * as configModule from '../../src/server/config';
 
 // Create a mock database object
 const mockDb = {
@@ -11,7 +11,7 @@ const mockDb = {
 };
 
 // Mock the config module's getDatabase function
-jest.mock('../../src/config', () => ({
+jest.mock('../../src/server/config', () => ({
   getDatabase: jest.fn().mockResolvedValue({
     collection: jest.fn().mockImplementation((name) => ({
       collectionName: name,
