@@ -370,6 +370,49 @@ const api = createCollectionApi('users', UserSchema, {
 });
 ```
 
+## Testing with a Real MongoDB Connection
+
+The package includes an integration test that validates the connection to MongoDB and tests the client-side hooks with real data. This test is useful for verifying that the package works correctly in a real-world scenario.
+
+### Running the MongoDB Connection Test
+
+There are two ways to provide the MongoDB URI for the test:
+
+#### Option 1: Using a .env.local file
+
+Create a `.env.local` file in the root directory with your MongoDB URI:
+
+```
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+```
+
+Then run the test:
+
+```bash
+npm test -- --testPathPattern=integration
+```
+
+The test will automatically load the environment variables from the `.env.local` file.
+
+#### Option 2: Providing the URI directly
+
+Alternatively, you can provide the MongoDB URI directly as an environment variable:
+
+```bash
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database npm test -- --testPathPattern=integration
+```
+
+Replace `mongodb+srv://username:password@cluster.mongodb.net/database` with your actual MongoDB connection string.
+
+The test will:
+1. Connect to MongoDB using the provided URI
+2. List all collections in the database
+3. Test the client-side hooks with the real collection data
+
+If no MongoDB URI is provided, the test will automatically skip with a warning message.
+
+For more details, see the [integration test README](__tests__/integration/README.md).
+
 ## License
 
 MIT
