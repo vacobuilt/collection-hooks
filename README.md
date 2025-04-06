@@ -36,6 +36,13 @@ configureCollectionHooks({
   dbName: 'mydatabase',
 });
 
+// With debug mode enabled
+configureCollectionHooks({
+  mongodbUri: 'mongodb://localhost:27017',
+  dbName: 'mydatabase',
+  debug: true, // Logs helpful connection information to the console
+});
+
 // Or with advanced options
 configureCollectionHooks({
   mongodbUri: 'mongodb://username:password@localhost:27017',
@@ -44,6 +51,7 @@ configureCollectionHooks({
     // MongoDB client options
     connectTimeoutMS: 5000,
   },
+  debug: false, // Debug mode is disabled by default
 });
 
 // Or with an existing database connection

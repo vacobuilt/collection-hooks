@@ -112,4 +112,63 @@ describe('Configuration Module', () => {
       configureCollectionHooks({} as any);
     }).toThrow('Invalid configuration');
   });
+
+  it('should enable debug logging when debug flag is true', () => {
+    // Mock console.log
+    const originalConsoleLog = console.log;
+    console.log = jest.fn();
+
+    try {
+      // Configure with debug enabled
+      configureCollectionHooks({
+        mongodbUri: 'mongodb://localhost:27017',
+        debug: true
+      });
+
+      // Verify debug logging is enabled by checking if console.log was called
+      expect(console.log).toHaveBeenCalledWith(
+        '[collection-hooks debug]',
+        'Configuring collection hooks with options:',
+        expect.any(String)
+      );
+
+      // Call getDatabase to trigger more debug logs
+      getDatabase();
+      
+      // Verify debug logging for getDatabase
+      expect(console.log).toHaveBeenCalledWith(
+        '[collection-hooks debug]',
+        'Getting database connection'
+      );
+    } finally {
+      // Restore original console.log
+      console.log = originalConsoleLog;
+    }
+  });
+
+  it('should not log debug messages when debug flag is false', () => {
+    // Mock console.log
+    const originalConsoleLog = console.log;
+    console.log = jest.fn();
+
+    try {
+      // Configure with debug disabled
+      configureCollectionHooks({
+        mongodbUri: 'mongodb://localhost:27017',
+        debug: false
+      });
+
+      // Call getDatabase
+      getDatabase();
+      
+      // Verify console.log was not called with debug messages
+      expect(console.log).not.toHaveBeenCalledWith(
+        '[collection-hooks debug]',
+        expect.any(String)
+      );
+    } finally {
+      // Restore original console.log
+      console.log = originalConsoleLog;
+    }
+  });
 });
