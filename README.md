@@ -1,6 +1,25 @@
 # @highspringlabs/collection-hooks
 
-React hooks for MongoDB collections with caching and type safety.
+React hooks and server side functions for using MongoDB collections with caching and type safety. Initially built to run in a NextJS environment, this package can be used in any React app (included integration tests assume react-only).
+
+## Quick Reference
+
+| Category | Function | Description | Import From |
+|----------|----------|-------------|------------|
+| **Client Hooks** | `useCollection` | Base hook for fetching and caching collection data | `@highspringlabs/collection-hooks/client` |
+| | `useCollectionQuery` | Low-level hook for fetching data from an API endpoint | `@highspringlabs/collection-hooks/client` |
+| | `useCollectionMutation` | Hook for mutating data through an API endpoint | `@highspringlabs/collection-hooks/client` |
+| | `useAllCollections` | Hook for managing multiple collections | `@highspringlabs/collection-hooks/client` |
+| **Client Utilities** | `createCollectionHook` | Factory function for creating specialized collection hooks | `@highspringlabs/collection-hooks/client` |
+| | `clientCache` | Utility for client-side caching | `@highspringlabs/collection-hooks/client` |
+| **Server Configuration** | `configureCollectionHooks` | Configure the MongoDB connection | `@highspringlabs/collection-hooks/server` |
+| | `getDatabase` | Get the configured database connection | `@highspringlabs/collection-hooks/server` |
+| | `closeConnection` | Close the database connection | `@highspringlabs/collection-hooks/server` |
+| **Server API** | `createCollectionApi` | Factory function for creating collection API endpoints | `@highspringlabs/collection-hooks/server` |
+| | `getCollection` | Get a MongoDB collection with type safety | `@highspringlabs/collection-hooks/server` |
+| **Server Utilities** | `serverCache` | Utility for server-side caching | `@highspringlabs/collection-hooks/server` |
+
+See the [API Reference](#api-reference) section for detailed documentation.
 
 ## Installation
 
@@ -141,29 +160,265 @@ export { getAll, getById, create, update, remove };
 
 ## API Reference
 
-### Hooks
+### Client-Side Functions
 
-#### `useCollection<T>(endpoint: string, initialData?: T[], options?: CollectionOptions): CollectionHookResult<T>`
+The following functions are available from the client-side entry point (`@highspringlabs/collection-hooks/client`):
+
+#### Hooks
+
+##### `useCollection<T>(endpoint: string, initialData?: T[], options?: CollectionOptions): CollectionHookResult<T>`
 
 Base hook for fetching and caching collection data.
 
-#### `useCollectionQuery<T>(url: string | null): CollectionQueryResult<T>`
+```typescript
+import { useCollection } from '@highspringlabs/collection-hooks/client';
 
-Hook for fetching data from an API endpoint.
+function UsersComponent() {
+  const { data, loading, error, refresh, refetch } = useCollection<User>('/api/users');
+  
+  // Use data, loading, error states
+  // Call refresh() to force a refresh from server
+  // Call refetch() to refetch data respecting cache settings
+}
+```
 
-#### `useCollectionMutation<T>(url: string): CollectionMutationResult<T>`
+##### `useCollectionQuery<T>(url: string | null): CollectionQueryResult<T>`
+
+Low-level hook for fetching data from an API endpoint.
+
+```typescript
+import { useCollectionQuery } from '@highspringlabs/collection-hooks/client';
+
+function DataComponent() {
+  const { data, error, loading, refetch } = useCollectionQuery<ApiResponse>('/api/data');
+  
+  // Use data, loading, error states
+  // Call refetch() to refetch data
+}
+```
+
+##### `useCollectionMutation<T>(url: string): CollectionMutationResult<T>`
 
 Hook for mutating data through an API endpoint.
 
-#### `useAllCollections(): AllCollectionsResult`
+```typescript
+import { useCollectionMutation } from '@highspringlabs/collection-hooks/client';
+
+function CreateUserForm() {
+  const { data, error, loading, mutate } = useCollectionMutation<User>('/api/users');
+  
+  const handleSubmit = async (userData) => {
+    const result = await mutate(userData);
+    // Handle result
+  };
+}
+```
+
+##### `useAllCollections<T>(config: AllCollectionsConfig<T>): AllCollectionsResult<T>`
 
 Hook for managing multiple collections.
 
-### Server Utilities
+```typescript
+import { useAllCollections } from '@highspringlabs/collection-hooks/client';
 
-#### `createCollectionApi<T>(collectionName: string, schema: z.ZodType<T>, options?: ApiOptions): CollectionApi<T>`
+function DashboardComponent() {
+  const { data, loading, error, refreshAll } = useAllCollections({
+    endpoints: {
+      users: '/api/users',
+      posts: '/api/posts',
+      comments: '/api/comments'
+    },
+    initialData: {
+      users: [],
+      posts: [],
+      comments: []
+    }
+  });
+  
+  // Access data.users, data.posts, data.comments
+  // Call refreshAll() to refresh all collections
+}
+```
+
+#### Utilities
+
+##### `createCollectionHook<T>(endpoint: string): (initialData?: T[]) => CollectionHookResult<T>`
+
+Factory function for creating specialized collection hooks.
+
+```typescript
+import { createCollectionHook } from '@highspringlabs/collection-hooks/client';
+
+// Create a specialized hook for users
+const useUsers = createCollectionHook<User>('/api/users');
+
+function UsersComponent() {
+  // Use the specialized hook
+  const { data, loading, error } = useUsers();
+}
+```
+
+##### `clientCache`
+
+Utility for client-side caching.
+
+```typescript
+import { clientCache } from '@highspringlabs/collection-hooks/client';
+
+// Set cache
+clientCache.set('key', data, 60000); // Cache for 60 seconds
+
+// Get from cache
+const data = clientCache.get('key');
+
+// Check if cache exists
+const exists = clientCache.has('key');
+
+// Delete from cache
+clientCache.delete('key');
+
+// Clear all cache
+clientCache.clear();
+```
+
+### Server-Side Functions
+
+The following functions are available from the server-side entry point (`@highspringlabs/collection-hooks/server`):
+
+#### Configuration
+
+##### `configureCollectionHooks(config: CollectionHooksConfig | AdvancedCollectionHooksConfig): void`
+
+Configure the MongoDB connection.
+
+```typescript
+import { configureCollectionHooks } from '@highspringlabs/collection-hooks/server';
+
+// Basic configuration
+configureCollectionHooks({
+  mongodbUri: 'mongodb://localhost:27017',
+  dbName: 'mydatabase',
+  debug: true
+});
+
+// Advanced configuration
+configureCollectionHooks({
+  // Option 1: Connection string
+  mongodbUri: 'mongodb://username:password@localhost:27017',
+  dbName: 'mydatabase',
+  
+  // OR Option 2: Existing database connection
+  // database: existingDbConnection,
+  
+  // OR Option 3: Function that returns a database connection
+  // getDatabaseFn: async () => { return db; },
+  
+  debug: true
+});
+```
+
+##### `getDatabase(): Promise<Db>`
+
+Get the configured database connection.
+
+```typescript
+import { getDatabase } from '@highspringlabs/collection-hooks/server';
+
+async function getDatabaseInfo() {
+  const db = await getDatabase();
+  // Use the database connection
+}
+```
+
+##### `closeConnection(): Promise<void>`
+
+Close the database connection.
+
+```typescript
+import { closeConnection } from '@highspringlabs/collection-hooks/server';
+
+// In your app's cleanup code
+async function cleanup() {
+  await closeConnection();
+}
+```
+
+#### API Creation
+
+##### `createCollectionApi<T>(collectionName: string, schema: z.ZodType<T>, options?: ApiOptions): CollectionApi<T>`
 
 Factory function for creating collection API endpoints.
+
+```typescript
+import { createCollectionApi } from '@highspringlabs/collection-hooks/server';
+import { z } from 'zod';
+
+// Define schema
+const UserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email()
+});
+
+// Create API endpoints
+const userApi = createCollectionApi('users', UserSchema, {
+  cacheTime: 60 * 1000, // 1 minute
+  validateOnWrite: true,
+  hooks: {
+    beforeRead: (query) => ({ ...query, active: true }),
+    afterRead: (data) => data.map(user => ({ ...user, displayName: user.name })),
+    beforeWrite: (data) => ({ ...data, updatedAt: new Date() }),
+    afterWrite: (data) => ({ ...data, processed: true })
+  }
+});
+
+// Use in API routes
+export async function GET(req) {
+  return userApi.getAll(req);
+}
+
+export async function POST(req) {
+  return userApi.create(req);
+}
+```
+
+##### `getCollection<T>(collectionName: string): Promise<Collection<T>>`
+
+Get a MongoDB collection with type safety.
+
+```typescript
+import { getCollection } from '@highspringlabs/collection-hooks/server';
+
+async function getUsersCollection() {
+  const collection = await getCollection<User>('users');
+  // Use the collection
+}
+```
+
+#### Utilities
+
+##### `serverCache`
+
+Utility for server-side caching.
+
+```typescript
+import { serverCache } from '@highspringlabs/collection-hooks/server';
+
+// Set cache
+serverCache.set('key', data, 60000); // Cache for 60 seconds
+
+// Get from cache
+const data = serverCache.get('key');
+
+// Check if cache exists
+const exists = serverCache.has('key');
+
+// Delete from cache
+serverCache.delete('key');
+
+// Clear all cache
+serverCache.clear();
+```
 
 ### Types
 
@@ -171,11 +426,11 @@ Factory function for creating collection API endpoints.
 
 ```typescript
 {
-  data: T[];
-  error: Error | null;
-  loading: boolean;
-  refresh: () => Promise<void>;
-  refetch: () => Promise<void>;
+  data: T[];                      // Collection data
+  error: Error | null;            // Error if any
+  loading: boolean;               // Loading state
+  refresh: () => Promise<void>;   // Force refresh from server
+  refetch: () => Promise<void>;   // Refetch respecting cache
 }
 ```
 
@@ -183,10 +438,10 @@ Factory function for creating collection API endpoints.
 
 ```typescript
 {
-  data: T | null;
-  error: Error | null;
-  loading: boolean;
-  refetch: () => Promise<void>;
+  data: T | null;                 // Query result
+  error: Error | null;            // Error if any
+  loading: boolean;               // Loading state
+  refetch: () => Promise<void>;   // Refetch data
 }
 ```
 
@@ -194,10 +449,36 @@ Factory function for creating collection API endpoints.
 
 ```typescript
 {
-  data: T | null;
-  error: Error | null;
-  loading: boolean;
-  mutate: (body: any) => Promise<T | null>;
+  data: T | null;                       // Mutation result
+  error: Error | null;                  // Error if any
+  loading: boolean;                     // Loading state
+  mutate: (body: any) => Promise<T | null>; // Mutation function
+}
+```
+
+#### `AllCollectionsResult<T>`
+
+```typescript
+{
+  data: {                         // Data for all collections
+    [K in keyof T]: T[K][];
+  };
+  loading: boolean;               // Loading state
+  error: Error | null;            // Error if any
+  refreshAll: () => Promise<void>; // Refresh all collections
+}
+```
+
+#### `CollectionApi<T>`
+
+```typescript
+{
+  getAll: (req: Request) => Promise<Response>;                                  // Get all items
+  getById: (req: Request, context: { params: { id: string } }) => Promise<Response>; // Get item by ID
+  create: (req: Request) => Promise<Response>;                                  // Create item
+  update: (req: Request, context: { params: { id: string } }) => Promise<Response>; // Update item
+  remove: (req: Request, context: { params: { id: string } }) => Promise<Response>; // Delete item
+  refreshCache: (req: Request) => Promise<Response>;                            // Refresh cache
 }
 ```
 
