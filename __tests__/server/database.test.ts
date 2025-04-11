@@ -1,4 +1,3 @@
-import { Collection, Db } from 'mongodb';
 import { getDatabase, getCollection } from '../../src/server/database';
 import * as configModule from '../../src/server/config';
 
