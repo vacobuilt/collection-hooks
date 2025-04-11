@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCollectionQuery } from './useCollectionQuery';
-import { CollectionOptions, CollectionHookResult, StandardizableFields } from '../types';
-import { getEntityType, standardizeItems } from '../utils/standardization';
+import { CollectionOptions, CollectionHookResult } from '../types';
 import clientCache from '../utils/clientCache';
 
 /**
@@ -12,15 +11,13 @@ import clientCache from '../utils/clientCache';
  * @param options Options for the collection hook
  * @returns Object containing data, error, loading state, and refresh/refetch functions
  */
-export function useCollection<T extends StandardizableFields>(
+export function useCollection<T = any>(
   endpoint: string,
   initialData: T[] = [],
   options: CollectionOptions = {}
 ): CollectionHookResult<T> {
   const {
-    standardizeFields: shouldStandardizeFields = true,
     cacheTime = 5 * 60 * 1000, // 5 minutes default
-    fieldMappings = {},
     transformResponse,
   } = options;
 
@@ -42,14 +39,9 @@ export function useCollection<T extends StandardizableFields>(
   // Update client cache when server data changes
   useEffect(() => {
     if (serverData?.success && serverData.data) {
-      // Apply field standardization if enabled
+      // Apply custom transform if provided
       let data = serverData.data;
       
-      if (shouldStandardizeFields) {
-        data = standardizeItems(data, getEntityType(collectionName), fieldMappings);
-      }
-      
-      // Apply custom transform if provided
       if (transformResponse) {
         data = transformResponse(data);
       }
@@ -59,7 +51,7 @@ export function useCollection<T extends StandardizableFields>(
       // Update client cache
       clientCache.set(`collection:${collectionName}`, data, cacheTime);
     }
-  }, [serverData, collectionName, shouldStandardizeFields, transformResponse, cacheTime, fieldMappings]);
+  }, [serverData, collectionName, transformResponse, cacheTime]);
 
   // Check client cache on mount
   useEffect(() => {
@@ -84,14 +76,9 @@ export function useCollection<T extends StandardizableFields>(
       const result = await response.json();
       
       if (result.success && result.data) {
-        // Apply field standardization if enabled
+        // Apply custom transform if provided
         let data = result.data;
         
-        if (shouldStandardizeFields) {
-          data = standardizeItems(data, getEntityType(collectionName), fieldMappings);
-        }
-        
-        // Apply custom transform if provided
         if (transformResponse) {
           data = transformResponse(data);
         }
@@ -106,7 +93,7 @@ export function useCollection<T extends StandardizableFields>(
     } finally {
       setIsRefreshing(false);
     }
-  }, [endpoint, collectionName, shouldStandardizeFields, transformResponse, cacheTime, fieldMappings]);
+  }, [endpoint, collectionName, transformResponse, cacheTime]);
 
   return {
     data: cachedData,

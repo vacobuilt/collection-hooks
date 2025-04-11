@@ -1,23 +1,6 @@
 import { z } from 'zod';
 
 /**
- * Interface for standardizable fields
- */
-export interface StandardizableFields {
-  name?: string;
-  title?: string;
-  description?: string;
-  solutionNarrative?: string;
-  problemStatement?: string;
-  challenge?: string;
-  primaryChallenges?: string[];
-  keyFeatures?: string[];
-  benefits?: string[];
-  outcomeMetrics?: string[];
-  [key: string]: any;
-}
-
-/**
  * Options for the useCollection hook
  */
 export interface CollectionOptions {
@@ -25,8 +8,6 @@ export interface CollectionOptions {
   staleTime?: number;         // How long until data is considered stale (in ms)
   refetchOnMount?: boolean;   // Whether to refetch data when component mounts
   refetchOnWindowFocus?: boolean; // Whether to refetch data when window regains focus
-  standardizeFields?: boolean; // Whether to standardize field names
-  fieldMappings?: Record<string, string>; // Custom field mappings
   transformResponse?: (data: any) => any; // Custom transform function
 }
 
@@ -67,8 +48,6 @@ export interface CollectionMutationResult<T> {
 export interface ApiOptions {
   cacheTime?: number;
   validateOnWrite?: boolean;
-  standardizeFields?: boolean;
-  fieldMappings?: Record<string, string>;
   hooks?: {
     beforeRead?: (query: any) => any;
     afterRead?: (data: any) => any;

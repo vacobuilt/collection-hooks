@@ -2,12 +2,10 @@ import { renderHook, act } from '@testing-library/react-hooks/dom';
 import { useCollection } from '../../src/hooks/useCollection';
 import { useCollectionQuery } from '../../src/hooks/useCollectionQuery';
 import clientCache from '../../src/utils/clientCache';
-import { standardizeItems, getEntityType } from '../../src/utils/standardization';
 
 // Mock dependencies
 jest.mock('../../src/hooks/useCollectionQuery');
 jest.mock('../../src/utils/clientCache');
-jest.mock('../../src/utils/standardization');
 
 // Mock fetch globally
 const mockFetch = jest.fn();
@@ -18,11 +16,6 @@ describe('useCollection', () => {
   const mockItems = [
     { id: '1', title: 'Item 1' },
     { id: '2', title: 'Item 2' }
-  ];
-  
-  const mockStandardizedItems = [
-    { id: '1', title: 'Item 1', name: 'Item 1' },
-    { id: '2', title: 'Item 2', name: 'Item 2' }
   ];
 
   beforeEach(() => {
@@ -36,10 +29,6 @@ describe('useCollection', () => {
       refetch: jest.fn()
     });
     
-    // Mock standardization functions
-    (getEntityType as jest.Mock).mockReturnValue('item');
-    (standardizeItems as jest.Mock).mockReturnValue(mockStandardizedItems);
-    
     // Mock clientCache
     (clientCache.get as jest.Mock).mockReturnValue(null);
     (clientCache.set as jest.Mock).mockImplementation(() => {});
@@ -52,15 +41,13 @@ describe('useCollection', () => {
     );
 
     // Check state
-    expect(result.current.data).toEqual(mockStandardizedItems);
+    expect(result.current.data).toEqual(mockItems);
     expect(result.current.error).toBeNull();
     expect(result.current.loading).toBe(false);
     
     // Verify dependencies were called correctly
     expect(useCollectionQuery).toHaveBeenCalledWith('api/items');
-    expect(getEntityType).toHaveBeenCalledWith('items');
-    expect(standardizeItems).toHaveBeenCalledWith(mockItems, 'item', {});
-    expect(clientCache.set).toHaveBeenCalledWith('collection:items', mockStandardizedItems, 5 * 60 * 1000);
+    expect(clientCache.set).toHaveBeenCalledWith('collection:items', mockItems, 5 * 60 * 1000);
   });
 
   it('should use initial data when provided', () => {
@@ -95,8 +82,13 @@ describe('useCollection', () => {
       refetch: jest.fn()
     });
     
-    // Mock standardizeItems to return the cached data
-    (standardizeItems as jest.Mock).mockReturnValue(cachedData);
+    // Mock useCollectionQuery to not return data in this test
+    (useCollectionQuery as jest.Mock).mockImplementationOnce(() => ({
+      data: null,
+      error: null,
+      loading: false,
+      refetch: jest.fn()
+    }));
     
     // Render the hook
     const { result } = renderHook(() => 
@@ -105,18 +97,6 @@ describe('useCollection', () => {
 
     // It should use the cached data
     expect(result.current.data).toEqual(cachedData);
-  });
-
-  it('should apply custom field mappings', () => {
-    const fieldMappings = { title: 'customName' };
-    
-    // Render the hook with custom field mappings
-    renderHook(() => 
-      useCollection('api/items', [], { fieldMappings })
-    );
-    
-    // Verify standardizeItems was called with the custom field mappings
-    expect(standardizeItems).toHaveBeenCalledWith(mockItems, 'item', fieldMappings);
   });
 
   it('should apply custom transform function', () => {
@@ -129,20 +109,9 @@ describe('useCollection', () => {
     );
     
     // Verify transform function was called and data was transformed
-    expect(transformResponse).toHaveBeenCalledWith(mockStandardizedItems);
+    expect(transformResponse).toHaveBeenCalledWith(mockItems);
     expect(result.current.data).toEqual(transformedData);
     expect(clientCache.set).toHaveBeenCalledWith('collection:items', transformedData, 5 * 60 * 1000);
-  });
-
-  it('should skip standardization if disabled', () => {
-    // Render the hook with standardization disabled
-    renderHook(() => 
-      useCollection('api/items', [], { standardizeFields: false })
-    );
-    
-    // Verify standardizeItems was not called
-    expect(standardizeItems).not.toHaveBeenCalled();
-    expect(clientCache.set).toHaveBeenCalledWith('collection:items', mockItems, 5 * 60 * 1000);
   });
 
   it('should use custom cache time', () => {
@@ -154,13 +123,12 @@ describe('useCollection', () => {
     );
     
     // Verify cache was set with custom cache time
-    expect(clientCache.set).toHaveBeenCalledWith('collection:items', mockStandardizedItems, customCacheTime);
+    expect(clientCache.set).toHaveBeenCalledWith('collection:items', mockItems, customCacheTime);
   });
 
   it('should refresh data when refresh is called', async () => {
     // Mock fetch response for refresh
     const refreshedItems = [{ id: '5', title: 'Refreshed Item' }];
-    const refreshedStandardizedItems = [{ id: '5', title: 'Refreshed Item', name: 'Refreshed Item' }];
     
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -170,17 +138,10 @@ describe('useCollection', () => {
       })
     });
     
-    // Update the mock to return the refreshed data
-    (standardizeItems as jest.Mock).mockReturnValue(refreshedStandardizedItems);
-    
     // Render the hook
     const { result, waitForNextUpdate } = renderHook(() => 
       useCollection('api/items', [])
     );
-    
-    // Reset the mock to ensure it's called with the right data
-    (standardizeItems as jest.Mock).mockClear();
-    (standardizeItems as jest.Mock).mockReturnValue(refreshedStandardizedItems);
     
     // Call refresh
     act(() => {
@@ -195,7 +156,7 @@ describe('useCollection', () => {
     
     // After refresh, it should have the new data
     expect(result.current.loading).toBe(false);
-    expect(result.current.data).toEqual(refreshedStandardizedItems);
+    expect(result.current.data).toEqual(refreshedItems);
     
     // Verify fetch was called with the correct URL
     expect(mockFetch).toHaveBeenCalledWith('api/items', {
@@ -203,7 +164,7 @@ describe('useCollection', () => {
     });
     
     // Verify cache was updated
-    expect(clientCache.set).toHaveBeenCalledWith('collection:items', refreshedStandardizedItems, 5 * 60 * 1000);
+    expect(clientCache.set).toHaveBeenCalledWith('collection:items', refreshedItems, 5 * 60 * 1000);
   });
 
   it('should handle refresh errors', async () => {
@@ -233,7 +194,7 @@ describe('useCollection', () => {
     
     // After refresh error, it should not change the data
     expect(result.current.loading).toBe(false);
-    expect(result.current.data).toEqual(mockStandardizedItems);
+    expect(result.current.data).toEqual(mockItems);
     
     // Verify error was logged
     expect(console.error).toHaveBeenCalledWith(

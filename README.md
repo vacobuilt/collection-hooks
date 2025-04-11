@@ -1,6 +1,6 @@
 # @highspringlabs/collection-hooks
 
-React hooks and server side functions for using MongoDB collections with caching and type safety. Initially built to run in a NextJS environment, this package can be used in any React app (included integration tests assume react-only).
+React hooks and server side functions for using MongoDB collections with caching and type safety. Initially built to run in a NextJS environment, this package can be used in any React app (included integration tests assume react-only). See [HOWTO.md](HOWTO.md) for a concise explanation on using this package.
 
 ## Quick Reference
 

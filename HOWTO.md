@@ -45,6 +45,25 @@ export const UserSchema = z.object({
 export type User = z.infer<typeof UserSchema>;
 ```
 
+### MongoDB Collection Structure
+
+The schema you define corresponds directly to how your documents are stored in MongoDB. For example, with the `User` schema above, your MongoDB collection would contain documents that look like this:
+
+```json
+{
+  "_id": "ObjectId('60d21b4667d0d8992e610c85')",  // MongoDB's internal ID
+  "id": "user-123",                               // Your application's ID field
+  "name": "John Doe",
+  "email": "john@example.com",
+  "age": 30,
+  "createdAt": "2025-04-11T13:45:00.000Z"
+}
+```
+
+When you use the `useCollection` hook in your JavaScript/TypeScript code, the data is automatically transformed from the MongoDB document format to match your defined schema type. This gives you type safety throughout your application while maintaining flexibility in how your data is stored.
+
+Note that while MongoDB automatically adds an `_id` field to each document, the package uses your specified `id` field for operations like updates and deletes. This allows you to use your own ID generation strategy (like UUIDs) while still benefiting from MongoDB's indexing.
+
 ## 4. Create API Endpoints
 
 Set up API endpoints for your collection:

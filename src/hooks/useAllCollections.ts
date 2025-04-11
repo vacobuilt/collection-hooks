@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { useCollection } from './useCollection';
-import { StandardizableFields } from '../types';
 
 /**
  * Configuration for useAllCollections hook
@@ -32,7 +31,7 @@ export interface AllCollectionsResult<T extends Record<string, any>> {
  * @param config Configuration for the collections
  * @returns Object containing data for all collections, loading state, error, and refreshAll function
  */
-export function useAllCollections<T extends Record<string, StandardizableFields[]>>(
+export function useAllCollections<T extends Record<string, any[]>>(
   config: AllCollectionsConfig<T>
 ): AllCollectionsResult<T> {
   const { endpoints, initialData = {} } = config;
